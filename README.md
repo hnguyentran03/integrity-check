@@ -1,5 +1,7 @@
 # File Integrity Checker
 
+File integrity checker to verify integrity of files using hashing.
+
 The tool is capable of the following:
 - Accept a directory or a single log file as input.
 - Utilize a cryptographic hashing algorithm, such as SHA-256, to compute hashes for each log file provided.
@@ -31,3 +33,6 @@ Use the `update` argument to update the hashes of the directory or file in `path
 ./integrity-check update logs/file.log # Update hashes of file
 ./integrity-check check /logs # Update hashes of directory
 ```
+
+## Credits
+Project idea from: https://roadmap.sh/projects/file-integrity-checker
