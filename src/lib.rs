@@ -24,7 +24,8 @@ pub fn compute_hash(path: &path::PathBuf) -> anyhow::Result<String> {
 pub fn store_hashes(hashes: &HashMap<path::PathBuf, String>, hash_file: &str) -> anyhow::Result<()> {
     let mut file = OpenOptions::new()
         .create(true)
-        .append(true)
+        .write(true)
+        .truncate(true)
         .open(hash_file)
         .context(format!("Could not open hash file {:?}", hash_file))?;
 
