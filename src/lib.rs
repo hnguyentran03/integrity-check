@@ -62,3 +62,9 @@ pub fn compare_hash(path: &path::PathBuf, hashes: &HashMap<path::PathBuf, String
 
     Ok(current_hash == stored_hash)
 }
+
+pub fn update_hash(path: &path::PathBuf, hashes: &mut HashMap<path::PathBuf, String>) -> anyhow::Result<()> {
+    let new_hash = compute_hash(path)?;
+    hashes.insert(path.clone(), new_hash);
+    Ok(())
+}
