@@ -88,11 +88,21 @@ mod tests {
         hashes.insert(file_path.clone(), hash.clone());
         store_hashes(&hashes, hash_file.to_str().unwrap())?;
 
+        // Verify that the hash file was created
+        assert!(hash_file.exists());
+
         // Load hashes and verify
         let loaded_hashes = load_hashes(hash_file.to_str().unwrap())?;
         assert_eq!(loaded_hashes.get(&file_path).unwrap(), &hash);
 
         dir.close()?;
         Ok(())
+    }
+
+    #[test]
+    fn test_non_existent_file() {
+        let non_existent_path = std::path::PathBuf::from("non_existent_file.txt");
+        let result = compute_hash(&non_existent_path);
+        assert!(result.is_err());
     }
 }
