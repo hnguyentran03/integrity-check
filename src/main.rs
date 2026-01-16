@@ -1,58 +1,99 @@
 use anyhow::Context;
 use clap::Parser;
 use std::{
-    fs::metadata,
-    io::prelude::*,
+    collections::HashMap, fs::{metadata, read_dir}, io::{BufWriter, prelude::*}, path::PathBuf
 };
-use integrity_check::{compute_hash, store_hash};
+use integrity_check::{compute_hash, store_hashes, load_hashes, compare_hash};
 
 const HASH_FILE: &str = ".hashes";
 
 #[derive(Parser)]
 struct Cli {
     command: String,
-    path: std::path::PathBuf,
+    path: PathBuf,
 }
 
-fn init(path: &std::path::PathBuf) -> anyhow::Result<()> {
+// Initialize integrity checking by computing and storing hashes of logs
+fn init(path: &PathBuf, handle: &mut BufWriter<std::io::Stdout>) -> anyhow::Result<()> {
     let md = metadata(path)
         .context(format!("Could not read metadata of file {:?}", path.display()))?;
 
+    let mut hashes: HashMap<PathBuf, String> = HashMap::new();
+
     if md.is_dir() {
-        for entry in std::fs::read_dir(path)
+        for entry in read_dir(path)
             .context(format!("Could not read directory {:?}", path.display()))?
         {
             let entry = entry.context("Could not get directory entry")?;
             let entry_path = entry.path();
             let hash = compute_hash(&entry_path)?;
-            store_hash(&hash, HASH_FILE)?;
+            hashes.insert(entry_path, hash.clone());
+            store_hashes(&hashes, HASH_FILE)?;
         }
+
+        writeln!(handle, "Hashes stored succesfully")
+            .context("Could not write to stdout")?;
         Ok(())
     } else if md.is_file() {
         let hash = compute_hash(path)?;
-        store_hash(&hash, HASH_FILE)
+        hashes.insert(path.clone(), hash.clone());
+        store_hashes(&hashes, HASH_FILE)?;
+
+        writeln!(handle, "Hashes stored succesfully")
+            .context("Could not write to stdout")?;
+        Ok(())
     } else {
         Err(anyhow::anyhow!("Path is neither a file nor a directory"))
     }
 }
 
-fn check(path: &std::path::PathBuf) -> anyhow::Result<()> {
-    todo!("Implement integrity checking");
+// Check integrity of files by comparing current hashes with stored hashes
+fn check(path: &PathBuf) -> anyhow::Result<()> {
+    let md = metadata(path)
+        .context(format!("Could not read metadata of file {:?}", path.display()))?;
+
+    let hashes = load_hashes(HASH_FILE)?;
+
+    if md.is_dir() {
+        for entry in read_dir(path)
+            .context(format!("Could not read directory {:?}", path.display()))?
+        {
+            let entry = entry.context("Could not get directory entry")?;
+            let entry_path = entry.path();
+            
+            if compare_hash(&entry_path, &hashes)? {
+                println!("File {:?} is unchanged", entry_path.display());
+            } else {
+                println!("File {:?} has been modified", entry_path.display());
+            }
+        }
+        Ok(())
+    } else if md.is_file() {
+        if compare_hash(path, &hashes)? {
+            println!("File {:?} is unchanged", path.display());
+        } else {
+            println!("File {:?} has been modified", path.display());
+        }
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!("Path is neither a file nor a directory"))
+    }
 }
 
-fn update(path: &std::path::PathBuf) -> anyhow::Result<()> {
+// Update stored hashes after changes
+fn update(path: &PathBuf) -> anyhow::Result<()> {
     todo!("Implement updating mechanism");
 }
 
 fn main() -> anyhow::Result<()> {
     let stdout = std::io::stdout();
-    let mut handle = std::io::BufWriter::new(stdout);
+    let mut handle = BufWriter::new(stdout);
 
     let args = Cli::parse();
 
     match args.command.as_str() {
         "init" => {
-            init(&args.path)
+            init(&args.path, &mut handle)
         }
         "check" => {
             check(&args.path)
