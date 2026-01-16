@@ -5,7 +5,7 @@ use std::{
 };
 use integrity_check::{compute_hash, store_hashes, load_hashes, compare_hash, update_hash};
 
-const HASH_FILE: &str = ".hashes";
+const HASH_FILE: &str = "hash_store.txt";
 
 #[derive(Parser)]
 struct Cli {
