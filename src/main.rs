@@ -13,8 +13,9 @@ struct Cli {
     path: PathBuf,
 }
 
-// Initialize integrity checking by computing and storing hashes of logs
+// Initialize integrity checking by computing and storing hashes of logs into a file
 fn init(path: &PathBuf, handle: &mut BufWriter<std::io::Stdout>) -> anyhow::Result<()> {
+    // Read metadata to determine if path is file or directory
     let md = metadata(path)
         .context(format!("Could not read metadata of file {:?}", path.display()))?;
 
@@ -26,11 +27,13 @@ fn init(path: &PathBuf, handle: &mut BufWriter<std::io::Stdout>) -> anyhow::Resu
         {
             let entry = entry.context("Could not get directory entry")?;
             let entry_path = entry.path();
+
             let hash = compute_hash(&entry_path)?;
             hashes.insert(entry_path, hash.clone());
-            store_hashes(&hashes, HASH_FILE)?;
         }
 
+        store_hashes(&hashes, HASH_FILE)?;
+        
         writeln!(handle, "Hashes stored succesfully")
             .context("Could not write to stdout")?;
         Ok(())

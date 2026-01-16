@@ -7,3 +7,4 @@ edition = "2024"
 anyhow = "1.0.100"
 clap = { version = "4.5.54", features = ["derive"] }
 sha2 = "0.10.9"
+tempfile = "3.24.0"
