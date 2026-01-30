@@ -1,3 +1,4 @@
 /target/
 /logs/
 hash_store.txt
+hashes.db
